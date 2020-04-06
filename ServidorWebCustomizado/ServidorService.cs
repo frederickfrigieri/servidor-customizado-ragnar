@@ -34,24 +34,50 @@ namespace ServidorWebCustomizado
 			//Aqui eu to referenciando a requisição em uma variável
 			HttpListenerRequest requisicao = contexto.Request;
 
+
+			//Essa classe será responsavel procurar pelo endpoint em arquivo fisico
+			//Ex: Na rota vou receber localhost:4000/home, eu vou pegar o "home" e vou procurar no diretorio da aplicação por home.html ou home.htm
+			//Caso eu encontre eu vou retornar um Stream com os bytes deste arquivo
+			//Caso não encontre eu vou retornar null
+			ManipulaRequisicao manipularRequisicao = new ManipulaRequisicao(requisicao);
+
+			//TODO
+			//Aqui eu criei uma variável para o retorno no Browser quando o endereço for chamado
+			//string mensagemParaExibirNoBrowser =  Utilidades.BemVindoHtml();
+
 			//Aqui eu to referenciado a resposta em uma variável
 			HttpListenerResponse resposta = contexto.Response;
 
-			//Aqui eu criei uma variável para o retorno no Browser quando o endereço for chamado
-			string mensagemParaExibirNoBrowser =  Utilidades.BemVindoHtml();
 
 			//Aqui eu preciso converte-lá (string) para um array de byte pois ele é um dos tipos de dados que eu preciso pra escrever em um stream
-			byte[] buffer = Encoding.UTF8.GetBytes(mensagemParaExibirNoBrowser);
+			//byte[] buffer = Encoding.UTF8.GetBytes(mensagemParaExibirNoBrowser);
+			byte[] buffer = manipularRequisicao.ObtemInfoRequisicao();
 
-			//Obtendo a referencia do stream da respota
-			resposta.ContentLength64 = buffer.Length;
-			Stream stream = resposta.OutputStream;
+			if (manipularRequisicao.PrimeiroEndpoint != null)
+			{
+				ObtemArquivoHtm arquivoHtm = new ObtemArquivoHtm(manipularRequisicao.PrimeiroEndpoint);
 
-			//Escrevendo no stream
-			stream.Write(buffer, 0, buffer.Length);
+				buffer = arquivoHtm.ObterArrayBytes();
 
-			//Aqui eu preciso fechar a conexão com o stream caso contrário ele ficar referenciando um endereço na memória desnecessária.
-			stream.Close();
+				if (buffer == null)
+				{
+					resposta.StatusCode = 404;
+
+				}
+			}
+
+			if (buffer != null && buffer.Length > 0)
+			{
+				//Obtendo a referencia do stream da respota
+				resposta.ContentLength64 = buffer.Length;
+				Stream stream = resposta.OutputStream;
+
+				//Escrevendo no stream
+				stream.Write(buffer, 0, buffer.Length);
+
+				//Aqui eu preciso fechar a conexão com o stream caso contrário ele ficar referenciando um endereço na memória desnecessária.
+				stream.Close();
+			}
 
 			//para o listner
 			listener.Stop();

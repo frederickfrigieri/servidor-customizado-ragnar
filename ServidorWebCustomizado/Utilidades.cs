@@ -1,4 +1,6 @@
 using System;
+using System.Text;
+
 namespace ServidorWebCustomizado
 {
 	public class Utilidades
@@ -28,5 +30,11 @@ namespace ServidorWebCustomizado
 
 			return html;
 		}
+
+		public static byte[] TransformStringToStream(string entrada)
+		{
+			return Encoding.UTF8.GetBytes(entrada);
+		}
+
 	}
 }
